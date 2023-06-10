@@ -20,6 +20,20 @@ def sort_contours(cnts):
     (cnts, boundingBoxes) = zip(*sorted(zip(cnts, boundingBoxes), key=lambda b: b[1][i], reverse=reverse))
     return cnts
 
+def maximizeContrast(imgGrayscale):
+    # Làm cho độ tương phản lớn nhất
+    height, width, _ = imgGrayscale.shape
+    structuringElement = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))  # tạo bộ lọc kernel
+
+    imgTopHat = cv2.morphologyEx(imgGrayscale, cv2.MORPH_TOPHAT, structuringElement, iterations=10)  # nổi bật chi tiết sáng trong nền tối
+    imgBlackHat = cv2.morphologyEx(imgGrayscale, cv2.MORPH_BLACKHAT, structuringElement, iterations=10)  # Nổi bật chi tiết tối trong nền sáng
+
+    imgGrayscalePlusTopHat = cv2.add(imgGrayscale, imgTopHat)
+    imgGrayscalePlusTopHatMinusBlackHat = cv2.subtract(imgGrayscalePlusTopHat, imgBlackHat)
+
+    # Kết quả cuối là ảnh đã tăng độ tương phản
+    return imgGrayscalePlusTopHatMinusBlackHat
+
 # Dinh nghia cac ky tu tren bien so
 char_list = '0123456789ABCDEFGHKLMNPRSTUVXYZ'
 
@@ -63,7 +77,7 @@ if Ivehicle is None:
     print("Không thể tải ảnh. Hãy kiểm tra lại đường dẫn của ảnh.")
     exit()
 
-# Tiền xử lý ảnh: Tăng độ tương phản và giảm nhiễu Gauss
+# Tiền xử lý ảnh: Tăng độ tương phản
 # Ivehicle = maximizeContrast(Ivehicle)
 
 # Kích thước lớn nhất và nhỏ nhất của 1 chiều ảnh
@@ -86,7 +100,7 @@ if len(LpImg):
     # Chuyen doi anh bien so
     LpImg[0] = cv2.convertScaleAbs(LpImg[0], alpha=(255.0))
 
-    # Ví dụ, LpImg[0] là ảnh biển số đã cắt ra
+    # LpImg[0] là ảnh biển số đã cắt ra
     roi = LpImg[0]
 
     # Lấy chiều dài và chiều rộng của ảnh

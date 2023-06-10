@@ -30,8 +30,6 @@ def fine_tune(lp):
 def maximizeContrast(imgGrayscale):
     # Làm cho độ tương phản lớn nhất
     height, width, _ = imgGrayscale.shape
-    imgTopHat = np.zeros((height, width, 1), np.uint8)
-    imgBlackHat = np.zeros((height, width, 1), np.uint8)
     structuringElement = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))  # tạo bộ lọc kernel
 
     imgTopHat = cv2.morphologyEx(imgGrayscale, cv2.MORPH_TOPHAT, structuringElement, iterations=10)  # nổi bật chi tiết sáng trong nền tối
@@ -68,7 +66,7 @@ if Ivehicle is None:
     exit()
 
 # Tiền xử lý ảnh: Tăng độ tương phản
-Ivehicle = maximizeContrast(Ivehicle)
+# Ivehicle = maximizeContrast(Ivehicle)
 
 # Kích thước lớn nhất và nhỏ nhất của 1 chiều ảnh
 Dmax = 608
