@@ -2,7 +2,7 @@ import glob
 import cv2
 import os
 
-image_path="data/data_train/"
+image_path="data/charTrainset/"
 write_path="data/"
 
 for number in range(10):

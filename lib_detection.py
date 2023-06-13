@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from keras.models import model_from_json
 
-
 class Label:
     def __init__(self, cl=-1, tl=np.array([0., 0.]), br=np.array([0., 0.]), prob=None):
         self.__tl = tl

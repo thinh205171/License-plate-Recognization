@@ -89,14 +89,14 @@ model.summary()
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-H = model.fit(X_train, Y_train, validation_data=(X_test, Y_test), epochs=43)
+H = model.fit(X_train, Y_train, validation_data=(X_test, Y_test), epochs=50)
 
 # Save the model
 model.save('cnn_model.h5')
 
 # Vẽ đồ thị loss, accuracy của training set và validation set
 fig = plt.figure()
-numOfEpoch = 43
+numOfEpoch = 50
 plt.plot(np.arange(0, numOfEpoch), H.history['loss'], label='training loss')
 plt.plot(np.arange(0, numOfEpoch), H.history['val_loss'], label='validation loss')
 plt.plot(np.arange(0, numOfEpoch), H.history['accuracy'], label='accuracy')
