@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from keras.models import model_from_json
 
+
 class Label:
     def __init__(self, cl=-1, tl=np.array([0., 0.]), br=np.array([0., 0.]), prob=None):
         self.__tl = tl
@@ -13,7 +14,7 @@ class Label:
 
     def __str__(self):
         return 'Class: %d, top left(x: %f, y: %f), bottom right(x: %f, y: %f)' % (
-        self.__cl, self.__tl[0], self.__tl[1], self.__br[0], self.__br[1])
+            self.__cl, self.__tl[0], self.__tl[1], self.__br[0], self.__br[1])
 
     def copy(self):
         return Label(self.__cl, self.__tl, self.__br)
@@ -53,6 +54,7 @@ class Label:
     def set_prob(self, prob):
         self.__prob = prob
 
+
 class DLabel(Label):
     def __init__(self, cl, pts, prob):
         self.pts = pts
@@ -60,30 +62,35 @@ class DLabel(Label):
         br = np.amax(pts, axis=1)
         Label.__init__(self, cl, tl, br, prob)
 
+
 # Hàm normalize ảnh
 def im2single(Image):
     return Image.astype('float32') / 255
 
+
 def getWH(shape):
     return np.array(shape[1::-1]).astype(float)
 
+
 def IOU(tl1, br1, tl2, br2):
-    wh1, wh2 = br1-tl1, br2-tl2
-    assert((wh1 >= 0).all() and (wh2 >= 0).all())
-    
+    wh1, wh2 = br1 - tl1, br2 - tl2
+    assert ((wh1 >= 0).all() and (wh2 >= 0).all())
+
     intersection_wh = np.maximum(np.minimum(br1, br2) - np.maximum(tl1, tl2), 0)
     intersection_area = np.prod(intersection_wh)
     area1, area2 = (np.prod(wh1), np.prod(wh2))
     union_area = area1 + area2 - intersection_area
-    return intersection_area/union_area
+    return intersection_area / union_area
+
 
 def IOU_labels(l1, l2):
     return IOU(l1.tl(), l1.br(), l2.tl(), l2.br())
 
+
 def nms(Labels, iou_threshold=0.5):
     SelectedLabels = []
     Labels.sort(key=lambda l: l.prob(), reverse=True)
-    
+
     for label in Labels:
         non_overlap = True
         for sel_label in SelectedLabels:
@@ -95,6 +102,7 @@ def nms(Labels, iou_threshold=0.5):
             SelectedLabels.append(label)
     return SelectedLabels
 
+
 def load_model(path):
     path = splitext(path)[0]
     with open('%s.json' % path, 'r') as json_file:
@@ -103,24 +111,27 @@ def load_model(path):
     model.load_weights('%s.h5' % path)
     return model
 
+
 def find_T_matrix(pts, t_pts):
     A = np.zeros((8, 9))
     for i in range(0, 4):
         xi = pts[:, i]
         xil = t_pts[:, i]
         xi = xi.T
-        
-        A[i*2, 3:6] = -xil[2]*xi
-        A[i*2, 6:] = xil[1]*xi
-        A[i*2+1, :3] = xil[2]*xi
-        A[i*2+1, 6:] = -xil[0]*xi
+
+        A[i * 2, 3:6] = -xil[2] * xi
+        A[i * 2, 6:] = xil[1] * xi
+        A[i * 2 + 1, :3] = xil[2] * xi
+        A[i * 2 + 1, 6:] = -xil[0] * xi
 
     [U, S, V] = np.linalg.svd(A)
     H = V[-1, :].reshape((3, 3))
     return H
 
+
 def getRectPts(tlx, tly, brx, bry):
     return np.matrix([[tlx, brx, brx, tlx], [tly, tly, bry, bry], [1, 1, 1, 1]], dtype=float)
+
 
 def normal(pts, side, mn, MN):
     pts_MN_center_mn = pts * side
@@ -128,11 +139,12 @@ def normal(pts, side, mn, MN):
     pts_prop = pts_MN / MN.reshape((2, 1))
     return pts_prop
 
+
 # Hàm tái tạo từ predict value thành biến số, cắt từ ảnh chính ra biển số,  nhãn...
 def reconstruct(I, Iresized, Yr, lp_threshold):
     # 4 max-pooling layers, stride = 2
-    net_stride = 2**4
-    side = ((208 + 40)/2)/net_stride
+    net_stride = 2 ** 4
+    side = ((208 + 40) / 2) / net_stride
 
     # one line and two lines license plate size
     one_line = (470, 110)
@@ -145,9 +157,9 @@ def reconstruct(I, Iresized, Yr, lp_threshold):
     # CNN input image size 
     WH = getWH(Iresized.shape)
     # output feature map size
-    MN = WH/net_stride
+    MN = WH / net_stride
 
-    vxx = vyy = 0.5 #alpha
+    vxx = vyy = 0.5  # alpha
     base = lambda vx, vy: np.matrix([[-vx, -vy, 1], [vx, -vy, 1], [vx, vy, 1], [-vx, vy, 1]]).T
     labels = []
     labels_frontal = []
@@ -168,8 +180,8 @@ def reconstruct(I, Iresized, Yr, lp_threshold):
         B[0, 0] = max(A[0, 0], 0)
         B[1, 1] = max(A[1, 1], 0)
 
-        pts = np.array(A*base(vxx, vyy))
-        pts_frontal = np.array(B*base(vxx, vyy))
+        pts = np.array(A * base(vxx, vyy))
+        pts_frontal = np.array(B * base(vxx, vyy))
 
         pts_prop = normal(pts, side, mn, MN)
         frontal = normal(pts_frontal, side, mn, MN)
@@ -182,9 +194,13 @@ def reconstruct(I, Iresized, Yr, lp_threshold):
 
     print(final_labels_frontal)
 
-
     # LP size and type
-    out_size, lp_type = (two_lines, 2) if ((final_labels_frontal[0].wh()[0] / final_labels_frontal[0].wh()[1]) < 2) else (one_line, 1)
+    if len(final_labels_frontal) > 0:
+        out_size, lp_type = (two_lines, 2) if (
+                    (final_labels_frontal[0].wh()[0] / final_labels_frontal[0].wh()[1]) < 2) else (one_line, 1)
+    else:
+        # Xử lý khi danh sách rỗng, ví dụ:
+        out_size, lp_type = (0, 0)  # Hoặc bất kỳ giá trị mặc định nào bạn muốn
 
     TLp = []
     if len(final_labels):
@@ -199,8 +215,8 @@ def reconstruct(I, Iresized, Yr, lp_threshold):
     print(final_labels)
     return final_labels, TLp, lp_type
 
-def detect_lp(model, I, max_dim, lp_threshold):
 
+def detect_lp(model, I, max_dim, lp_threshold):
     # Tính factor resize ảnh
     min_dim_img = min(I.shape[:2])
     factor = float(max_dim) / min_dim_img
